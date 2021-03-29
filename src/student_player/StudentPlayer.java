@@ -1,12 +1,14 @@
 package student_player;
 
 import boardgame.Move;
-
-import pentago_twist.PentagoPlayer;
 import pentago_twist.PentagoBoardState;
+import pentago_twist.PentagoPlayer;
 
 /** A player file submitted by a student. */
 public class StudentPlayer extends PentagoPlayer {
+
+
+    private MCTS mcts;
 
     /**
      * You must modify this constructor to return your student number. This is
@@ -15,6 +17,7 @@ public class StudentPlayer extends PentagoPlayer {
      */
     public StudentPlayer() {
         super("260767897");
+         mcts = new MCTS();
     }
 
     /**
@@ -23,8 +26,6 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
-        System.out.println("YOU ARE: " + boardState.getTurnPlayer());
-        MCTSAlgorithm mcts = new MCTSAlgorithm(boardState);
-        return mcts.getMove(10000);
+        return mcts.nextMove(boardState);
     }
 }
