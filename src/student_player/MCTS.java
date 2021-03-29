@@ -3,21 +3,25 @@ package student_player;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class MCTS {
+public class MCTS implements Serializable {
 
     private Map<PentagoBoardState, Node> opponentsMoves;
     private long timeLimit;
+    private SimulationStrategy simulationStrategy;
 
     public MCTS() {
         opponentsMoves = new HashMap<>();
         timeLimit = 500;
+        simulationStrategy = SimulationStrategy.RANDOM;
     }
 
-    public MCTS(long timeLimit) {
+    public MCTS(long timeLimit, SimulationStrategy simulationStrategy) {
         opponentsMoves = new HashMap<>();
         this.timeLimit = timeLimit;
+        this.simulationStrategy = simulationStrategy;
     }
 
     public PentagoMove nextMove(PentagoBoardState board) {
@@ -34,7 +38,7 @@ public class MCTS {
             if (!selectedNode.children.isEmpty()) {
                 exploreNode = selectedNode.children.get((int) (Math.random() * selectedNode.children.size()));
             }
-            backPropagate(exploreNode, simulateRandom(exploreNode));
+            backPropagate(exploreNode, simulate(exploreNode, simulationStrategy));
         }
 
         PentagoMove move = Collections.max(root.children).move;
@@ -63,12 +67,12 @@ public class MCTS {
         return n;
     }
 
-    private void expand(Node node) {
+    private static void expand(Node node) {
         List<PentagoMove> moves = node.state.getAllLegalMoves();
         for (PentagoMove m : moves) new Node(node, m);
     }
 
-    private void backPropagate(Node node, int winner) {
+    private static void backPropagate(Node node, int winner) {
         Node n = node;
         while (n != null) {
             n.visits ++;
@@ -79,7 +83,7 @@ public class MCTS {
         }
     }
 
-    private int simulateRandom(Node node) {
+    private static int simulate(Node node, SimulationStrategy strategy) {
         PentagoBoardState state = (PentagoBoardState) node.state.clone();
         if (state.gameOver() && state.getWinner() != node.state.getTurnPlayer()) {
             // the parent node immediately results in a win for the player
@@ -87,12 +91,16 @@ public class MCTS {
             return state.getWinner();
         }
         while (!state.gameOver()) {
-            state.processMove((PentagoMove) state.getRandomMove());
+            if (strategy == SimulationStrategy.RANDOM)
+                state.processMove((PentagoMove) state.getRandomMove());
+            else if (strategy == SimulationStrategy.CONNECTEDNESS_HEURISTIC) {
+                state.processMove(Heuristics.choseMove(state));
+            }
         }
         return state.getWinner();
     }
 
-    private class Node implements Comparable<Node>{
+    private static class Node implements Comparable<Node> {
         PentagoBoardState state;
         PentagoMove move;
         List<Node> children;
@@ -123,5 +131,9 @@ public class MCTS {
         public int compareTo(Node node) {
             return Double.compare(uctVal(), node.uctVal());
         }
+    }
+
+    public enum SimulationStrategy{
+        RANDOM, CONNECTEDNESS_HEURISTIC
     }
 }

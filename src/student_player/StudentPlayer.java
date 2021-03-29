@@ -9,6 +9,7 @@ public class StudentPlayer extends PentagoPlayer {
 
 
     private MCTS mcts;
+    private boolean heuristicOnly = false;
 
     /**
      * You must modify this constructor to return your student number. This is
@@ -17,7 +18,17 @@ public class StudentPlayer extends PentagoPlayer {
      */
     public StudentPlayer() {
         super("260767897");
-         mcts = new MCTS();
+         mcts = new MCTS(500, MCTS.SimulationStrategy.CONNECTEDNESS_HEURISTIC);
+    }
+
+    public StudentPlayer(long time, MCTS.SimulationStrategy simulationStrategy) {
+        super("260767897");
+        mcts = new MCTS(time, simulationStrategy);
+    }
+
+    public StudentPlayer(boolean heuristicOnly) {
+        super("260767897");
+        this.heuristicOnly = heuristicOnly;
     }
 
     /**
@@ -26,6 +37,7 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
+        if (heuristicOnly) return Heuristics.choseMove(boardState);
         return mcts.nextMove(boardState);
     }
 }
