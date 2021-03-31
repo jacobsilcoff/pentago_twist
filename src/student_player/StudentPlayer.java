@@ -8,7 +8,7 @@ import pentago_twist.PentagoPlayer;
 public class StudentPlayer extends PentagoPlayer {
 
 
-    private MCTS mcts;
+    private MonteCarloUCT mcts;
     private boolean heuristicOnly = false;
 
     /**
@@ -18,12 +18,12 @@ public class StudentPlayer extends PentagoPlayer {
      */
     public StudentPlayer() {
         super("260767897");
-         mcts = new MCTS(500, MCTS.SimulationStrategy.CONNECTEDNESS_HEURISTIC);
     }
 
-    public StudentPlayer(long time, MCTS.SimulationStrategy simulationStrategy) {
+    //DELETE THESE:
+    public StudentPlayer(long time, SimulationStrategy simulationStrategy) {
         super("260767897");
-        mcts = new MCTS(time, simulationStrategy);
+        mcts = new MonteCarloUCT(time, simulationStrategy);
     }
 
     public StudentPlayer(boolean heuristicOnly) {
@@ -37,6 +37,10 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
+        if (mcts == null) {
+            mcts = new MonteCarloUCT(500, SimulationStrategy.CONNECTEDNESS_HEURISTIC);
+            mcts.loadTrainingFile();
+        }
         if (heuristicOnly) return Heuristics.choseMove(boardState);
         return mcts.nextMove(boardState);
     }

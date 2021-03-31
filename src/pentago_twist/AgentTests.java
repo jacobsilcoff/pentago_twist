@@ -1,13 +1,14 @@
 package pentago_twist;
 
+import student_player.MonteCarloUCT;
+import student_player.SimulationStrategy;
 import student_player.StudentPlayer;
-
-import static student_player.MCTS.SimulationStrategy.CONNECTEDNESS_HEURISTIC;
 
 public class AgentTests {
     public static void main(String[] args) {
         //vsRandom(new StudentPlayer);
-        headToHead(new StudentPlayer(500, CONNECTEDNESS_HEURISTIC), new RandomPentagoPlayer(), 25);
+        //headToHead(new StudentPlayer(500, CONNECTEDNESS_HEURISTIC), new RandomPentagoPlayer(), 25);
+        new MonteCarloUCT(1900, SimulationStrategy.RANDOM).createTrainingFile(500);
     }
 
     public static void headToHead(PentagoPlayer p1, PentagoPlayer p2, int times) {
@@ -17,8 +18,10 @@ public class AgentTests {
         for (int i = 0; i < times; i++) {
             PentagoBoardState state = new PentagoBoardState();
             while (!state.gameOver()) {
-                if (state.getTurnPlayer() == 0)
-                    state.processMove((PentagoMove) p1.chooseMove(state));
+                if (state.getTurnPlayer() == 0) {
+                    PentagoMove move = (PentagoMove) p1.chooseMove(state);
+                    state.processMove(move);
+                }
                 else state.processMove((PentagoMove) p2.chooseMove(state));
             }
             if (state.getWinner() == 0) {

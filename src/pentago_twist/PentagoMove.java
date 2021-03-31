@@ -2,10 +2,12 @@ package pentago_twist;
 
 import boardgame.Move;
 
+import java.io.Serializable;
+
 /**
  * @author mgrenander
  */
-public class PentagoMove extends Move {
+public class PentagoMove extends Move implements Serializable {
     private int playerId;
     private int xMove;
     private int yMove;

@@ -6,20 +6,21 @@ import pentago_twist.PentagoMove;
 import java.io.Serializable;
 import java.util.*;
 
-public class MCTS implements Serializable {
+public class MCTSDAG implements Serializable {
 
-    private Map<PentagoBoardState, Node> opponentsMoves;
+    private Map<PentagoBoardState, Node> nodeMap;
     private long timeLimit;
     private SimulationStrategy simulationStrategy;
+    private Node root;
 
-    public MCTS() {
-        opponentsMoves = new HashMap<>();
+    public MCTSDAG() {
+        nodeMap = new HashMap<>();
         timeLimit = 500;
         simulationStrategy = SimulationStrategy.RANDOM;
     }
 
-    public MCTS(long timeLimit, SimulationStrategy simulationStrategy) {
-        opponentsMoves = new HashMap<>();
+    public MCTSDAG(long timeLimit, SimulationStrategy simulationStrategy) {
+        nodeMap = new HashMap<>();
         this.timeLimit = timeLimit;
         this.simulationStrategy = simulationStrategy;
     }
@@ -27,7 +28,7 @@ public class MCTS implements Serializable {
     public PentagoMove nextMove(PentagoBoardState board) {
         long endTime = System.currentTimeMillis() + timeLimit;
 
-        Node root = opponentsMoves.getOrDefault(board, new Node(board));
+        root = nodeMap.getOrDefault(board, new Node(board));
 
         while (System.currentTimeMillis() < endTime) {
             Node selectedNode = selectNode(root);
@@ -41,24 +42,7 @@ public class MCTS implements Serializable {
             backPropagate(exploreNode, simulate(exploreNode, simulationStrategy));
         }
 
-        PentagoMove move = Collections.max(root.children).move;
-        updateChildMoves(root, move);
-        return move;
-    }
-
-    private void updateChildMoves(Node node, PentagoMove move) {
-        opponentsMoves.clear();
-        Node nextMove = null;
-        for (Node child : node.children) {
-            if (child.move.equals(move)) {
-                nextMove = child;
-                break;
-            }
-        }
-        if (nextMove == null) return;
-        for (Node child : nextMove.children) {
-            opponentsMoves.put(child.state, child);
-        }
+        return Collections.max(root.children).move;
     }
 
     private static Node selectNode(Node node) {
@@ -67,19 +51,29 @@ public class MCTS implements Serializable {
         return n;
     }
 
-    private static void expand(Node node) {
+    private void expand(Node node) {
         List<PentagoMove> moves = node.state.getAllLegalMoves();
-        for (PentagoMove m : moves) new Node(node, m);
+        for (PentagoMove m : moves) {
+            new Node(node, m);
+        }
     }
 
     private static void backPropagate(Node node, int winner) {
-        Node n = node;
-        while (n != null) {
-            n.visits ++;
+        Queue<Node> nodes = new LinkedList<>();
+        Queue<Double> scale = new LinkedList<>();
+        nodes.offer(node);
+        scale.offer(1.0);
+        while (!nodes.isEmpty()) {
+            Node n = nodes.remove();
+            double s = scale.remove();
+            n.visits += s;
             if (n.state.getTurnPlayer() != winner) {
-                node.wins ++;
+                node.wins += s;
             }
-            n = n.parent;
+            for (Node parent : n.parents) {
+                nodes.offer(parent);
+                scale.offer(s / n.parents.size());
+            }
         }
     }
 
@@ -87,7 +81,7 @@ public class MCTS implements Serializable {
         PentagoBoardState state = (PentagoBoardState) node.state.clone();
         if (state.gameOver() && state.getWinner() != node.state.getTurnPlayer()) {
             // the parent node immediately results in a win for the player
-            node.parent.wins = Integer.MIN_VALUE;
+            node.parents.get(0).wins = Integer.MIN_VALUE;
             return state.getWinner();
         }
         while (!state.gameOver()) {
@@ -100,40 +94,48 @@ public class MCTS implements Serializable {
         return state.getWinner();
     }
 
-    private static class Node implements Comparable<Node> {
+    private class Node implements Comparable<Node> {
         PentagoBoardState state;
         PentagoMove move;
         List<Node> children;
-        Node parent;
-        int visits;
+        List<Node> parents;
+        double visits;
         double wins;
 
         Node(PentagoBoardState state) {
             children = new ArrayList<>();
+            parents = new ArrayList<>();
             this.state = state;
         }
 
         Node(Node parent, PentagoMove move) {
             children = new ArrayList<>();
+            parents = new ArrayList<>();
             state = (PentagoBoardState) parent.state.clone();
             state.processMove(move);
-            this.parent = parent;
             this.move = move;
-            parent.children.add(this);
+            if (nodeMap.containsKey(state)) {
+                nodeMap.get(state).parents.add(parent);
+                parent.children.add(nodeMap.get(state));
+            } else {
+                this.parents.add(parent);
+                parent.children.add(this);
+                nodeMap.put(state, this);
+            }
         }
 
-        double uctVal() {
+        double ucdVal() {
             if (visits == 0) return Integer.MAX_VALUE;
-            return wins / visits + Math.sqrt(2.0*Math.log(parent.visits)/visits);
+            double parentVisits = 0;
+            for (Node p : parents) {
+                parentVisits += p.visits;
+            }
+            return wins / visits + Math.sqrt(2.0*Math.log(parentVisits)/visits);
         }
 
         @Override
         public int compareTo(Node node) {
-            return Double.compare(uctVal(), node.uctVal());
+            return Double.compare(ucdVal(), node.ucdVal());
         }
-    }
-
-    public enum SimulationStrategy{
-        RANDOM, CONNECTEDNESS_HEURISTIC
     }
 }
