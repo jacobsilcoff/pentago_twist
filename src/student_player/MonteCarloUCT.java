@@ -12,8 +12,8 @@ import java.util.Map;
 
 public class MonteCarloUCT {
     private static final SimulationStrategy DEFAULT_STRATEGY = SimulationStrategy.RANDOM;
-    private static final long DEFAULT_TRAIN_TIME = 1000;
-    private static final int INIT_TRAIN_TIME = 10000;
+    private static final long DEFAULT_TRAIN_TIME = 1200;
+    private static final int INIT_TRAIN_TIME = 5000;
 
     private static final PentagoBoardState INIT_STATE = (PentagoBoardState) (new PentagoBoard()).getBoardState();
     private static final MCTSNode INIT_ROOT = new MCTSNode();

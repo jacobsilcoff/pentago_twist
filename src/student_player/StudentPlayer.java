@@ -39,10 +39,17 @@ public class StudentPlayer extends PentagoPlayer {
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
-        if (mcts == null) {
-            mcts = new MonteCarloUCT();
-        }
-        if (heuristicOnly) return Heuristics.choseMove(boardState);
-        return mcts.nextMove(boardState);
+	try {
+            if (heuristicOnly) return Heuristics.choseMove(boardState);
+            if (mcts == null) {
+                mcts = new MonteCarloUCT();
+            }
+	    return mcts.nextMove(boardState);
+	} catch (OutOfMemoryError e) {
+	    mcts = null;
+	    System.gc();
+	    this.heuristicOnly = true;
+	    return Heuristics.choseMove(boardState);
+	}
     }
 }
