@@ -1,21 +1,23 @@
 package student_player;
 
+import pentago_twist.PentagoBoard;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.ArrayList;
 
-public class MCTSNode implements Comparable<MCTSNode>, Serializable {
-    @Serial
-    private static final long serialVersionUID = 29062230958230L;
+public class MCTSNode implements Comparable<MCTSNode> {
     PentagoBoardState state;
     PentagoMove move;
     ArrayList<MCTSNode> children;
     MCTSNode parent;
     int visits;
     double wins;
+
+    MCTSNode() {
+        children = new ArrayList<>();
+        this.state = (PentagoBoardState) (new PentagoBoard()).getBoardState();
+    }
 
     MCTSNode(PentagoBoardState state) {
         children = new ArrayList<>();

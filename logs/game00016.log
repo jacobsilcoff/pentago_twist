@@ -1,0 +1,12 @@
+# Server version 0.08 running on flapjack.localdomain:8123
+# Game ID: 16
+# Board class: pentago_twist.PentagoBoard
+# Timeout: 20000
+# First Move Timeout: 30000
+# Date: Mon Mar 29 00:42:28 EDT 2021
+# Player 1: Player-0, '260767897', running on localhost
+# Player 2: Player-1, 'RandomPlayer', running on localhost
+START Player-0 260767897
+START Player-1 RandomPlayer
+GAMEOVER USER CANCEL UNDECIDED
+# Game ended: Mon Mar 29 00:42:44 EDT 2021

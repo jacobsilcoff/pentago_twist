@@ -1,6 +1,7 @@
 package student_player;
 
 import boardgame.Move;
+import pentago_twist.PentagoBoard;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoPlayer;
 
@@ -20,10 +21,11 @@ public class StudentPlayer extends PentagoPlayer {
         super("260767897");
     }
 
-    //DELETE THESE:
+    //These constructors are for testing purposes only:
     public StudentPlayer(long time, SimulationStrategy simulationStrategy) {
         super("260767897");
         mcts = new MonteCarloUCT(time, simulationStrategy);
+        mcts.train((PentagoBoardState) (new PentagoBoard()).getBoardState(), 20000);
     }
 
     public StudentPlayer(boolean heuristicOnly) {
@@ -38,8 +40,7 @@ public class StudentPlayer extends PentagoPlayer {
      */
     public Move chooseMove(PentagoBoardState boardState) {
         if (mcts == null) {
-            mcts = new MonteCarloUCT(500, SimulationStrategy.CONNECTEDNESS_HEURISTIC);
-            mcts.loadTrainingFile();
+            mcts = new MonteCarloUCT();
         }
         if (heuristicOnly) return Heuristics.choseMove(boardState);
         return mcts.nextMove(boardState);

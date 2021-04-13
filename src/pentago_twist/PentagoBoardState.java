@@ -3,7 +3,6 @@ import boardgame.Board;
 import boardgame.BoardState;
 import boardgame.Move;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
@@ -14,7 +13,7 @@ import java.util.function.UnaryOperator;
  * Note: First player white, second player black!!
  * @author mgrenander
  */
-public class PentagoBoardState extends BoardState implements Serializable {
+public class PentagoBoardState extends BoardState {
     public static final int BOARD_SIZE = 6;
     private static final int QUAD_SIZE = 3;
     private static final int NUM_QUADS = 4;

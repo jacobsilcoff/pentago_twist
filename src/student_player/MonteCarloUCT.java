@@ -5,27 +5,37 @@ import pentago_twist.PentagoBoard;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class MonteCarloUCT {
+    private static final SimulationStrategy DEFAULT_STRATEGY = SimulationStrategy.RANDOM;
+    private static final long DEFAULT_TRAIN_TIME = 1000;
+    private static final int INIT_TRAIN_TIME = 10000;
+
+    private static final PentagoBoardState INIT_STATE = (PentagoBoardState) (new PentagoBoard()).getBoardState();
+    private static final MCTSNode INIT_ROOT = new MCTSNode();
+    private static final Map<PentagoBoardState, MCTSNode> INIT_CHILDREN = new HashMap<>();
+    static {
+        MonteCarloUCT m = new MonteCarloUCT();
+        m.root = INIT_ROOT;
+        m.train(INIT_STATE, INIT_TRAIN_TIME);
+        for (MCTSNode n : INIT_ROOT.children) {
+            INIT_CHILDREN.put(n.state, n);
+        }
+    }
 
     private final Map<PentagoBoardState, MCTSNode> descendantLookup;
     private long timeLimit;
     private SimulationStrategy simulationStrategy;
-    private static final String TRAINING_FILE = "OPENING_MOVES.ser";
     private MCTSNode root;
 
     public MonteCarloUCT() {
         descendantLookup = new HashMap<>();
-        timeLimit = 500;
-        simulationStrategy = SimulationStrategy.RANDOM;
+        timeLimit = DEFAULT_TRAIN_TIME;
+        simulationStrategy = DEFAULT_STRATEGY;
     }
 
     public MonteCarloUCT(long timeLimit, SimulationStrategy simulationStrategy) {
@@ -34,6 +44,7 @@ public class MonteCarloUCT {
         this.simulationStrategy = simulationStrategy;
     }
 
+    /**
     public void createTrainingFile(long timeLimit) {
         PentagoBoardState init = (PentagoBoardState) (new PentagoBoard()).getBoardState();
         train(init, timeLimit);
@@ -63,15 +74,22 @@ public class MonteCarloUCT {
             ex.printStackTrace();
         }
     }
+    **/
 
     public void train(PentagoBoardState board) {
         train(board, this.timeLimit);
     }
 
+    private static boolean boardEquals(PentagoBoardState b1, PentagoBoardState b2) {
+        return b1.toString().equals(b2.toString()) && b1.getTurnPlayer() == b2.getTurnPlayer();
+    }
+
     public void train(PentagoBoardState board, long timeLimit) {
         long endTime = System.currentTimeMillis() + timeLimit;
-        if (root == null || !root.state.equals(board)) {
-            root = descendantLookup.getOrDefault(board, new MCTSNode(board));
+        if (root == null || !(boardEquals(root.state, board))) {
+            root = descendantLookup.getOrDefault(
+                    board, INIT_CHILDREN.getOrDefault(board, new MCTSNode(board))
+            );
         }
         while (System.currentTimeMillis() < endTime) {
             MCTSNode selectedNode = selectNode(root);
@@ -82,7 +100,8 @@ public class MonteCarloUCT {
             if (!selectedNode.children.isEmpty()) {
                 exploreNode = selectedNode.children.get((int) (Math.random() * selectedNode.children.size()));
             }
-            backPropagate(exploreNode, simulate(exploreNode, simulationStrategy));
+            int result = simulate(exploreNode, simulationStrategy);
+            backPropagate(exploreNode, result);
         }
     }
 
@@ -124,10 +143,10 @@ public class MonteCarloUCT {
         while (n != null) {
             n.visits ++;
             if (winner == Board.DRAW) {
-                node.wins += 0.5;
+                n.wins += 5;
             }
             else if (n.state.getTurnPlayer() != winner) {
-                node.wins ++;
+                n.wins += 10;
             }
             n = n.parent;
         }
