@@ -9,7 +9,7 @@ import pentago_twist.PentagoMove;
 import java.util.ArrayList;
 import java.util.function.UnaryOperator;
 
-public class LightBoardState {
+public class LowMemoryBoardState {
     public static final int BOARD_SIZE = 6;
     private static final int NUM_QUADS = 4;
     public static final int QUAD_SIZE = 6;
@@ -30,9 +30,9 @@ public class LightBoardState {
     private int winner;
     private byte turnNumber;
 
-    public LightBoardState() {}
+    public LowMemoryBoardState() {}
 
-    public LightBoardState(PentagoBoardState other) {
+    public LowMemoryBoardState(PentagoBoardState other) {
         this.turnPlayer = (byte) other.getTurnPlayer();
         this.winner = other.getWinner();
         for (int i = 0; i < BOARD_SIZE; i++) {
@@ -277,7 +277,7 @@ public class LightBoardState {
     }
 
     public static void main(String[] args) {
-        LightBoardState lbs = new LightBoardState();
+        LowMemoryBoardState lbs = new LowMemoryBoardState();
         int parity = 0;
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
@@ -293,8 +293,8 @@ public class LightBoardState {
     }
 
     public boolean equals(Object o) {
-        if (o instanceof LightBoardState) {
-            LightBoardState other = (LightBoardState) o;
+        if (o instanceof LowMemoryBoardState) {
+            LowMemoryBoardState other = (LowMemoryBoardState) o;
             return other.first_32 == this.first_32 && other.last_4 == this.last_4
                     && this.winner == other.winner && this.turnPlayer == other.turnPlayer;
         }
@@ -309,7 +309,7 @@ public class LightBoardState {
     }
 
     public Object clone() {
-        LightBoardState other = new LightBoardState();
+        LowMemoryBoardState other = new LowMemoryBoardState();
         other.turnPlayer = this.turnPlayer;
         other.winner = this.winner;
         other.first_32 = this.first_32;

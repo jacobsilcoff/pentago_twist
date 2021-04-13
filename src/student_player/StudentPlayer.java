@@ -8,7 +8,7 @@ import pentago_twist.PentagoPlayer;
 public class StudentPlayer extends PentagoPlayer {
 
 
-    private MCTSLight mcts;
+    private MonteCarloUCT mcts;
     private boolean heuristicOnly = false;
 
     /**
@@ -29,17 +29,17 @@ public class StudentPlayer extends PentagoPlayer {
         try {
             if (heuristicOnly) {
                 System.out.println("chose from heuristic");
-                return Heuristics.choseMove(boardState);
+                return Heuristics.choseMove(new LowMemoryBoardState(boardState));
             }
             if (mcts == null) {
-                mcts = new MCTSLight();
+                mcts = new MonteCarloUCT();
             }
-            return mcts.nextMove(new LightBoardState(boardState));
+            return mcts.nextMove(new LowMemoryBoardState(boardState));
         } catch (OutOfMemoryError e) {
             mcts = null;
             System.gc();
             this.heuristicOnly = true;
-            return Heuristics.choseMove(boardState);
+            return Heuristics.choseMove(new LowMemoryBoardState(boardState));
         }
     }
 }

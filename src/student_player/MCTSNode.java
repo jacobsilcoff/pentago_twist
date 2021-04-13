@@ -1,13 +1,12 @@
 package student_player;
 
-import pentago_twist.PentagoBoard;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
 
 import java.util.ArrayList;
 
 public class MCTSNode implements Comparable<MCTSNode> {
-    PentagoBoardState state;
+    LowMemoryBoardState state;
     PentagoMove move;
     ArrayList<MCTSNode> children;
     MCTSNode parent;
@@ -16,17 +15,22 @@ public class MCTSNode implements Comparable<MCTSNode> {
 
     MCTSNode() {
         children = new ArrayList<>();
-        this.state = (PentagoBoardState) (new PentagoBoard()).getBoardState();
+        this.state = new LowMemoryBoardState();
+    }
+
+    MCTSNode(LowMemoryBoardState state) {
+        children = new ArrayList<>();
+        this.state = (LowMemoryBoardState) state.clone();
     }
 
     MCTSNode(PentagoBoardState state) {
         children = new ArrayList<>();
-        this.state = (PentagoBoardState) state.clone();
+        this.state = new LowMemoryBoardState(state);
     }
 
     MCTSNode(MCTSNode parent, PentagoMove move) {
         children = new ArrayList<>();
-        state = (PentagoBoardState) parent.state.clone();
+        state = (LowMemoryBoardState) parent.state.clone();
         state.processMove(move);
         this.parent = parent;
         this.move = move;
