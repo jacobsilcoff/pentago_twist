@@ -10,8 +10,8 @@ import java.util.Map;
 
 public class MonteCarloUCT {
     private static final SimulationStrategy DEFAULT_STRATEGY = SimulationStrategy.CONNECTEDNESS_HEURISTIC;
-    private static final long DEFAULT_TRAIN_TIME = 1500;
-    private static final int INIT_TRAIN_TIME = 15000;
+    private static final long DEFAULT_TRAIN_TIME = 1950;
+    private static final int INIT_TRAIN_TIME = 27000;
 
     private static final LowMemoryBoardState INIT_STATE = new LowMemoryBoardState();
     private static final MCTSNode INIT_ROOT = new MCTSNode();
