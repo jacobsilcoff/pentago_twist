@@ -1,7 +1,6 @@
 package student_player;
 
 import boardgame.Move;
-import pentago_twist.PentagoBoard;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoPlayer;
 
@@ -9,7 +8,7 @@ import pentago_twist.PentagoPlayer;
 public class StudentPlayer extends PentagoPlayer {
 
 
-    private MonteCarloUCT mcts;
+    private MCTSLight mcts;
     private boolean heuristicOnly = false;
 
     /**
@@ -21,35 +20,26 @@ public class StudentPlayer extends PentagoPlayer {
         super("260767897");
     }
 
-    //These constructors are for testing purposes only:
-    public StudentPlayer(long time, SimulationStrategy simulationStrategy) {
-        super("260767897");
-        mcts = new MonteCarloUCT(time, simulationStrategy);
-        mcts.train((PentagoBoardState) (new PentagoBoard()).getBoardState(), 20000);
-    }
-
-    public StudentPlayer(boolean heuristicOnly) {
-        super("260767897");
-        this.heuristicOnly = heuristicOnly;
-    }
-
     /**
      * This is the primary method that you need to implement. The ``boardState``
      * object contains the current state of the game, which your agent must use to
      * make decisions.
      */
     public Move chooseMove(PentagoBoardState boardState) {
-	try {
-            if (heuristicOnly) return Heuristics.choseMove(boardState);
-            if (mcts == null) {
-                mcts = new MonteCarloUCT();
+        try {
+            if (heuristicOnly) {
+                System.out.println("chose from heuristic");
+                return Heuristics.choseMove(boardState);
             }
-	    return mcts.nextMove(boardState);
-	} catch (OutOfMemoryError e) {
-	    mcts = null;
-	    System.gc();
-	    this.heuristicOnly = true;
-	    return Heuristics.choseMove(boardState);
-	}
+            if (mcts == null) {
+                mcts = new MCTSLight();
+            }
+            return mcts.nextMove(new LightBoardState(boardState));
+        } catch (OutOfMemoryError e) {
+            mcts = null;
+            System.gc();
+            this.heuristicOnly = true;
+            return Heuristics.choseMove(boardState);
+        }
     }
 }
