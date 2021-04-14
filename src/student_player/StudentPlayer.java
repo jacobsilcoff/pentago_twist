@@ -36,6 +36,13 @@ public class StudentPlayer extends PentagoPlayer {
             }
             return mcts.nextMove(new LowMemoryBoardState(boardState));
         } catch (OutOfMemoryError e) {
+            /*
+             if the memory limit is exceeded, we *attempt* to free memory
+             by nullifying our mcts and asking the JVM to garbage collect.
+             Since this is a serious error, we switch the instance to use
+             a heuristic exclusively, to prevent going over the memory limit
+             again.
+             */
             mcts = null;
             System.gc();
             this.heuristicOnly = true;

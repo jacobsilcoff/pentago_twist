@@ -9,9 +9,12 @@ import pentago_twist.PentagoMove;
 import java.util.ArrayList;
 import java.util.function.UnaryOperator;
 
+/**
+ * A refactored version of PentagoBoardState that uses less memory
+ */
 public class LowMemoryBoardState {
     public static final int BOARD_SIZE = 6;
-    private static final int NUM_QUADS = 4;
+    public static final int NUM_QUADS = 4;
     public static final int QUAD_SIZE = 6;
     public static final byte EMPTY = 0b00;
     public static final byte WHITE = 0b10;
@@ -25,13 +28,17 @@ public class LowMemoryBoardState {
 
 
     private long first_32; // 8 bytes, holding the first 32 spaces;
-    private byte last_4;
+    private byte last_4; // 1 byte, holding 4 spaces for a total of 36
     private byte turnPlayer;
     private int winner;
     private byte turnNumber;
 
     public LowMemoryBoardState() {}
 
+    /**
+     * Creates a light weight board state based on a PentagoBoardState
+     * @param other the board state to copy
+     */
     public LowMemoryBoardState(PentagoBoardState other) {
         this.turnPlayer = (byte) other.getTurnPlayer();
         this.winner = other.getWinner();
@@ -42,6 +49,84 @@ public class LowMemoryBoardState {
         }
         this.turnNumber = (byte) other.getTurnNumber();
     }
+
+    /**
+     * Accesses the byte representing the specified position
+     * @param x the x coord
+     * @param y the y coord
+     * @return one of 00 (empty), 01 (black) or 10 (white)
+     */
+    public byte getPos(int x, int y) {
+        int position = y * BOARD_SIZE + x;
+        if (position < 32) {
+            long mask = 0b11L << (position*2); // creates a mask to extract the specified bits
+            return (byte)((first_32 & mask) >>> (position*2)); // shift bits to least significant position
+        }
+        // same as before, but with a byte this time
+        position -= 32;
+        byte mask = (byte) (0b11 << (position*2));
+        return (byte)(((last_4 & mask) >>> (position*2)) & 0b11);
+    }
+
+    /**
+     * Sets the specified position
+     * @param x the x coord
+     * @param y the y coord
+     * @param val one of 00 (empty), 01 (black) or 10 (white)
+     */
+    public void setPos(int x, int y, byte val) {
+        int position = y * BOARD_SIZE + x;
+        if (position < 32) {
+            // start by clearing the bits you want to write with the mask below
+            long mask = ~(0b11L << (position*2));
+            first_32 &= mask;
+            // shift the bits in val to the correct position and or them in
+            first_32 |= ((long) val) << (position*2);
+            return;
+        }
+        position -= 32;
+        byte mask = (byte)~(0b11 << (position*2));
+        last_4 &= mask;
+        last_4 |= ((long)val) << (position*2);
+    }
+
+    /**
+     * Gets a quadrants specified by q
+     * This exists exclusively so I could repurpose code from PentagoBoardState
+     */
+    private byte[][] getQuadrant(int q) {
+        byte[][] t = new byte[3][3];
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int x = i; int y = j;
+                if (q == 1 || q == 3) y += QUAD_SIZE;
+                if (q == 2 || q == 3) x += QUAD_SIZE;
+                t[i][j] = getPos(x, y);
+            }
+        }
+        return t;
+    }
+
+    /**
+     * Writes an entire quadrant (also used to take advantage of
+     * logic from PentagoBoardState)
+     */
+    private void writeQuadrant(int q, byte[][] newQ) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                int x = i; int y = j;
+                if (q == 1 || q == 3) y += QUAD_SIZE;
+                if (q == 2 || q == 3) x += QUAD_SIZE;
+                setPos(x, y, newQ[i][j]);
+            }
+        }
+    }
+
+
+    /**
+     * Essentially everything past this point is slightly modified code from
+     * PentagoBoardState -- I didn't have time to optimize further :(
+     */
 
     public ArrayList<PentagoMove> getAllLegalMoves() {
         ArrayList<PentagoMove> legalMoves = new ArrayList<>();
@@ -129,30 +214,6 @@ public class LowMemoryBoardState {
         return winCounter >= 5;
     }
 
-    private byte[][] getQuadrant(int q) {
-        byte[][] t = new byte[3][3];
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int x = i; int y = j;
-                if (q == 1 || q == 3) y += QUAD_SIZE;
-                if (q == 2 || q == 3) x += QUAD_SIZE;
-                t[i][j] = getPos(x, y);
-            }
-        }
-        return t;
-    }
-
-    private void writeQuadrant(int q, byte[][] newQ) {
-        for (int i = 0; i < 3; i++) {
-            for (int j = 0; j < 3; j++) {
-                int x = i; int y = j;
-                if (q == 1 || q == 3) y += QUAD_SIZE;
-                if (q == 2 || q == 3) x += QUAD_SIZE;
-                 setPos(x, y, newQ[i][j]);
-            }
-        }
-    }
-
     private void updateQuadrants(PentagoMove m) {
         byte turnPiece = turnPlayer == 0 ? WHITE : BLACK;
         int x = m.getMoveCoord().getX();
@@ -218,31 +279,6 @@ public class LowMemoryBoardState {
         return t;
     }
 
-    public byte getPos(int x, int y) {
-        int position = y * BOARD_SIZE + x;
-        if (position < 32) {
-            long mask = 0b11L << (position*2);
-            return (byte)((first_32 & mask) >>> (position*2));
-        }
-        position -= 32;
-        byte mask = (byte) (0b11 << (position*2));
-        return (byte)(((last_4 & mask) >>> (position*2)) & 0b11);
-    }
-
-    public void setPos(int x, int y, byte val) {
-        int position = y * BOARD_SIZE + x;
-        if (position < 32) {
-            long mask = ~(0b11L << (position*2));
-            first_32 &= mask;
-            first_32 |= ((long) val) << (position*2);
-            return;
-        }
-        position -= 32;
-        byte mask = (byte)~(0b11 << (position*2));
-        last_4 &= mask;
-        last_4 |= ((long)val) << (position*2);
-    }
-
     private static String pieceStr(byte p) {
         if (p == EMPTY) {
             return " ";
@@ -276,22 +312,6 @@ public class LowMemoryBoardState {
         return boardString.toString();
     }
 
-    public static void main(String[] args) {
-        LowMemoryBoardState lbs = new LowMemoryBoardState();
-        int parity = 0;
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            for (int j = 0; j < BOARD_SIZE; j++) {
-                parity+=1;
-                if (parity%2==0) {
-                    lbs.setPos(i,j,WHITE);
-                } else {
-                    lbs.setPos(i,j,BLACK);
-                }
-            }
-        }
-        System.out.println(lbs.toString());
-    }
-
     public boolean equals(Object o) {
         if (o instanceof LowMemoryBoardState) {
             LowMemoryBoardState other = (LowMemoryBoardState) o;
@@ -317,5 +337,4 @@ public class LowMemoryBoardState {
         other.turnNumber = this.turnNumber;
         return other;
     }
-
 }

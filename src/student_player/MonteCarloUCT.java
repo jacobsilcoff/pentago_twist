@@ -8,15 +8,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implements the monte carlo tree search algorithm
+ */
 public class MonteCarloUCT {
+    //basic parameters
     private static final SimulationStrategy DEFAULT_STRATEGY = SimulationStrategy.CONNECTEDNESS_HEURISTIC;
     private static final long DEFAULT_TRAIN_TIME = 1950;
     private static final int INIT_TRAIN_TIME = 27000;
 
+    //variables storing the tree stemming from an empty board
     private static final LowMemoryBoardState INIT_STATE = new LowMemoryBoardState();
     private static final MCTSNode INIT_ROOT = new MCTSNode();
     private static final Map<LowMemoryBoardState, MCTSNode> INIT_CHILDREN = new HashMap<>();
     static {
+        // when the class initializes, we use an instance of MonteCarloUCT to
+        // train the static search tree
         MonteCarloUCT m = new MonteCarloUCT();
         m.root = INIT_ROOT;
         m.train(INIT_STATE, INIT_TRAIN_TIME);
@@ -25,28 +32,51 @@ public class MonteCarloUCT {
         }
     }
 
+
     private final Map<LowMemoryBoardState, MCTSNode> descendantLookup;
     private long timeLimit;
     private SimulationStrategy simulationStrategy;
     private MCTSNode root;
 
+    /**
+     * Creates an instance of MonteCarloUCT
+     */
     public MonteCarloUCT() {
         descendantLookup = new HashMap<>();
         timeLimit = DEFAULT_TRAIN_TIME;
         simulationStrategy = DEFAULT_STRATEGY;
     }
 
+    /**
+     * Trains the algorithm from a specified board state for the
+     * default amount of time
+     * @param board the state to train from
+     */
     public void train(LowMemoryBoardState board) {
         train(board, this.timeLimit);
     }
 
+    /**
+     * Trains the algorithm from a specified board state for a specified
+     * @param board the state to train from
+     * @param timeLimit the time, in ms, to train for
+     */
     public void train(LowMemoryBoardState board, long timeLimit) {
         long endTime = System.currentTimeMillis() + timeLimit;
+        /*
+        If the root doesn't correspond to the desired state to train from,
+        we'll check the descendantLookup for the state before initializing the
+        root to a new node at the specified board state
+         */
         if (root == null || !(root.state.equals(board))) {
             root = descendantLookup.getOrDefault(
                     board, INIT_CHILDREN.getOrDefault(board, new MCTSNode(board))
             );
         }
+        /*
+         Runs a cycle of select, explore, simulate, and back propagate until
+         the time limit expires
+         */
         while (System.currentTimeMillis() < endTime) {
             MCTSNode selectedNode = selectNode(root);
             if (!selectedNode.state.gameOver()) {
@@ -61,6 +91,11 @@ public class MonteCarloUCT {
         }
     }
 
+    /**
+     * Selects the best move, according to MCTS, from the given board state
+     * @param board the board to select a move for
+     * @return the optimal move
+     */
     public PentagoMove nextMove(LowMemoryBoardState board) {
         train(board);
         PentagoMove move = Collections.max(root.children).move;
@@ -68,32 +103,34 @@ public class MonteCarloUCT {
         return move;
     }
 
-    private void updateChildMoves(MCTSNode node, PentagoMove move) {
-        descendantLookup.clear();
-        MCTSNode nextMove = null;
-        for (MCTSNode child : node.children) {
-            if (child.move.equals(move)) {
-                nextMove = child;
-                break;
-            }
-        }
-        if (nextMove == null) return;
-        for (MCTSNode child : nextMove.children) {
-            descendantLookup.put(child.state, child);
-        }
-    }
 
+    /**
+     * Selects then leaf node with the largest UCT value
+     * starting from a specified root node
+     * @param node the node to select from
+     * @return the leaf node with largest UCT value
+     */
     private static MCTSNode selectNode(MCTSNode node) {
         MCTSNode n = node;
         while (!n.children.isEmpty()) n = Collections.max(n.children);
         return n;
     }
 
+    /**
+     * Expands the node by calculating the results of all legal moves, and
+     * adding them as children
+     * @param node a leaf node to expand
+     */
     private static void expand(MCTSNode node) {
         List<PentagoMove> moves = node.state.getAllLegalMoves();
         for (PentagoMove m : moves) new MCTSNode(node, m);
     }
 
+    /**
+     * Backpropagate the result of a simulation from a node
+     * @param node the node we simulated from
+     * @param winner the player that won at that node
+     */
     private static void backPropagate(MCTSNode node, int winner) {
         MCTSNode n = node;
         while (n != null) {
@@ -108,6 +145,12 @@ public class MonteCarloUCT {
         }
     }
 
+    /**
+     * Runs a simulation using the specified simulation strategy
+     * @param node the node to simulate from
+     * @param strategy the strategy to use for simulation
+     * @return the winner
+     */
     private static int simulate(MCTSNode node, SimulationStrategy strategy) {
         LowMemoryBoardState state = (LowMemoryBoardState) node.state.clone();
         if (state.gameOver() && state.getWinner() != node.state.getTurnPlayer()) {
@@ -123,5 +166,26 @@ public class MonteCarloUCT {
             }
         }
         return state.getWinner();
+    }
+
+    /**
+     * Used when a move is made to store all of the opponents possible moves
+     * in descendantLookup
+     * @param node the node from which we played a move
+     * @param move the move we played, who's resultant state will be analyzed
+     */
+    private void updateChildMoves(MCTSNode node, PentagoMove move) {
+        descendantLookup.clear();
+        MCTSNode nextMove = null;
+        for (MCTSNode child : node.children) {
+            if (child.move.equals(move)) {
+                nextMove = child;
+                break;
+            }
+        }
+        if (nextMove == null) return;
+        for (MCTSNode child : nextMove.children) {
+            descendantLookup.put(child.state, child);
+        }
     }
 }

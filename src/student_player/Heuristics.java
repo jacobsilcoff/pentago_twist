@@ -7,6 +7,12 @@ import java.util.List;
 
 import static pentago_twist.PentagoBoardState.Piece;
 
+/**
+ * Holds a heuristic used for training MCTS
+ *
+ * It's pluralized since I was going to add more and test them against each other,
+ * but ran out of time.
+ */
 public class Heuristics {
 
     private static final int HORIZ = 0;
@@ -16,6 +22,12 @@ public class Heuristics {
     private static final int[] DIRECTIONS = new int[]{HORIZ, VERT, DIAG_1, DIAG_2};
     private static final int[] WEIGHTS = new int[] {0, 1, 10, 100, 1000};
 
+    /**
+     * Chooses a move based on a connectedness heuristic that prioritizes
+     * states where your pieces are lined up
+     * @param state the state to chose a move from
+     * @return the best move according to the heuristic
+     */
     public static PentagoMove choseMove(LowMemoryBoardState state) {
         int maxScore = Integer.MIN_VALUE;
         PentagoMove bestMove = null;
@@ -33,6 +45,15 @@ public class Heuristics {
         return bestMove;
     }
 
+    /**
+     * Evaluates the "connectedness" of a board state. It counts the number
+     * of 1s, 2s, 3s, and 4s in-a-row for each player, scores them with a weight
+     * (0, 10, 100, and 1000 respectively) and subtracts the score for the current
+     * player from the score for the opponent.
+     * @param state the state to evaluate
+     * @param you the player to evaluate for
+     * @return a "connectedness score"
+     */
     public static int evaluateConnectedness(LowMemoryBoardState state, Piece you) {
         if (state.gameOver()) {
             if (state.getWinner() == state.getTurnPlayer()) return Integer.MIN_VALUE;
