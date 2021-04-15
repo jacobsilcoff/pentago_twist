@@ -1,7 +1,9 @@
 package student_player;
 
+import boardgame.Move;
 import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoMove;
+import pentago_twist.PentagoPlayer;
 
 import java.util.List;
 
@@ -13,7 +15,7 @@ import static pentago_twist.PentagoBoardState.Piece;
  * It's pluralized since I was going to add more and test them against each other,
  * but ran out of time.
  */
-public class Heuristics {
+public class Heuristics extends PentagoPlayer {
 
     private static final int HORIZ = 0;
     private static final int VERT = 1;
@@ -94,5 +96,14 @@ public class Heuristics {
             score += WEIGHTS[count];
         }
         return score;
+    }
+
+    @Override
+    public Move chooseMove(PentagoBoardState boardState) {
+        return choseMove(new LowMemoryBoardState(boardState));
+    }
+
+    public Heuristics() {
+        super("260767897");
     }
 }

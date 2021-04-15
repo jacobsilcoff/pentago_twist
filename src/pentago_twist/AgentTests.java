@@ -1,11 +1,35 @@
 package pentago_twist;
 
+import student_player.LowMemoryBoardState;
 import student_player.StudentPlayer;
+
+import java.util.ArrayList;
 
 public class AgentTests {
     public static void main(String[] args) {
         // issue -- slow! and why??
-        headToHead(new StudentPlayer(), new RandomPentagoPlayer(), 25);
+        //testRandomRepresentation();
+        headToHead(new StudentPlayer(), new RandomPentagoPlayer(), 50);
+    }
+
+    public static void testRandomRepresentation() {
+        System.out.println();
+        for (int i = 0; i < 100; i++) {
+            PentagoBoardState std = (PentagoBoardState) (new PentagoBoard()).getBoardState();
+            LowMemoryBoardState l = new LowMemoryBoardState();
+            while (!(std.gameOver() && l.gameOver())) {
+                ArrayList<PentagoMove> moves = std.getAllLegalMoves();
+                assert(moves.equals(l.getAllLegalMoves()));
+                PentagoMove move = moves.get((int)(Math.random() * moves.size()));
+                l.processMove(move);
+                std.processMove(move);
+                assert(std.toString().equals(l.toString()));
+            }
+            assert(std.getWinner() == l.getWinner());
+            System.out.print(i + ", ");
+        }
+        System.out.println();
+
     }
 
     public static void headToHead(PentagoPlayer p1, PentagoPlayer p2, int times) {

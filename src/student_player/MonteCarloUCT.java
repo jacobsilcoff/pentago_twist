@@ -52,8 +52,8 @@ public class MonteCarloUCT {
      * default amount of time
      * @param board the state to train from
      */
-    public void train(LowMemoryBoardState board) {
-        train(board, this.timeLimit);
+    public PentagoMove train(LowMemoryBoardState board) {
+        return train(board, this.timeLimit);
     }
 
     /**
@@ -61,7 +61,7 @@ public class MonteCarloUCT {
      * @param board the state to train from
      * @param timeLimit the time, in ms, to train for
      */
-    public void train(LowMemoryBoardState board, long timeLimit) {
+    public PentagoMove train(LowMemoryBoardState board, long timeLimit) {
         long endTime = System.currentTimeMillis() + timeLimit;
         /*
         If the root doesn't correspond to the desired state to train from,
@@ -73,6 +73,29 @@ public class MonteCarloUCT {
                     board, INIT_CHILDREN.getOrDefault(board, new MCTSNode(board))
             );
         }
+
+        /*
+        Performs a shallow search to prevent an immediate loss
+         */
+        if (root.children.isEmpty()) expand(root);
+        for (MCTSNode child : root.children) {
+            if (root.state.turnNumber < 4) break;
+            if (child.state.gameOver() && child.state.getWinner() == root.state.getTurnPlayer()) {
+                System.out.println("FOUND WINNER?");
+                return child.move;
+            }
+            if (child.children.isEmpty()) expand(child);
+            for (MCTSNode grandChild : child.children) {
+                if (grandChild.state.gameOver() && grandChild.state.getWinner() != Board.DRAW
+                        && grandChild.state.getWinner() != root.state.getTurnPlayer()) {
+                    child.wins = Double.MIN_VALUE;
+                    child.visits = 1;
+                    break;
+                }
+            }
+        }
+
+
         /*
          Runs a cycle of select, explore, simulate, and back propagate until
          the time limit expires
@@ -89,6 +112,7 @@ public class MonteCarloUCT {
             int result = simulate(exploreNode, simulationStrategy);
             backPropagate(exploreNode, result);
         }
+        return null;
     }
 
     /**
@@ -97,7 +121,8 @@ public class MonteCarloUCT {
      * @return the optimal move
      */
     public PentagoMove nextMove(LowMemoryBoardState board) {
-        train(board);
+        PentagoMove m = train(board);
+        if (m != null) return m;
         PentagoMove move = Collections.max(root.children).move;
         updateChildMoves(root, move);
         return move;

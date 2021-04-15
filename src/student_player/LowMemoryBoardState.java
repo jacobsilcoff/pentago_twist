@@ -6,16 +6,17 @@ import pentago_twist.PentagoBoardState;
 import pentago_twist.PentagoCoord;
 import pentago_twist.PentagoMove;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.function.UnaryOperator;
 
 /**
  * A refactored version of PentagoBoardState that uses less memory
  */
-public class LowMemoryBoardState {
+public class LowMemoryBoardState implements Serializable {
     public static final int BOARD_SIZE = 6;
     public static final int NUM_QUADS = 4;
-    public static final int QUAD_SIZE = 6;
+    public static final int QUAD_SIZE = 3;
     public static final byte EMPTY = 0b00;
     public static final byte WHITE = 0b10;
     public static final byte BLACK = 0b01;
@@ -31,9 +32,11 @@ public class LowMemoryBoardState {
     private byte last_4; // 1 byte, holding 4 spaces for a total of 36
     private byte turnPlayer;
     private int winner;
-    private byte turnNumber;
+    protected byte turnNumber;
 
-    public LowMemoryBoardState() {}
+    public LowMemoryBoardState() {
+        winner = Board.NOBODY;
+    }
 
     /**
      * Creates a light weight board state based on a PentagoBoardState
@@ -94,7 +97,7 @@ public class LowMemoryBoardState {
      * Gets a quadrants specified by q
      * This exists exclusively so I could repurpose code from PentagoBoardState
      */
-    private byte[][] getQuadrant(int q) {
+    public byte[][] getQuadrant(int q) {
         byte[][] t = new byte[3][3];
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
@@ -165,7 +168,7 @@ public class LowMemoryBoardState {
     }
 
     public boolean gameOver() {
-        return ((turnNumber >= MAX_TURNS - 1) && turnPlayer == BLACK) || winner != Board.NOBODY;
+        return ((turnNumber >= MAX_TURNS - 1) && turnPlayer == 1) || winner != Board.NOBODY;
     }
 
     private boolean checkVerticalWin(int player) {
@@ -284,9 +287,9 @@ public class LowMemoryBoardState {
             return " ";
         }
         if (p == WHITE) {
-            return "W";
+            return "w";
         }
-        return "B";
+        return "b";
     }
 
     public String toString() {

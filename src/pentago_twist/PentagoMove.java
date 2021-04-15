@@ -13,6 +13,13 @@ public class PentagoMove extends Move {
     private int bSwap;
     private boolean fromBoard;
 
+    public boolean equals(Object o) {
+        if (! (o instanceof PentagoMove)) return false;
+        PentagoMove m = (PentagoMove) o;
+        return m.playerId == playerId && m.xMove == xMove && m.yMove == yMove
+                && m.aSwap == aSwap && m.bSwap == bSwap;
+    }
+
     public PentagoMove(PentagoCoord coord, int aSwap, int bSwap, int playerId) {
         this(coord.getX(), coord.getY(), aSwap, bSwap, playerId);
     }
