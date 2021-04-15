@@ -10,6 +10,9 @@ public class AgentTests {
         // issue -- slow! and why??
         //testRandomRepresentation();
         headToHead(new StudentPlayer(), new RandomPentagoPlayer(), 50);
+//        TrainingFileManager.write();
+//        MCTSNode node = TrainingFileManager.read();
+//        System.out.println(node);
     }
 
     public static void testRandomRepresentation() {

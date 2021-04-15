@@ -2,14 +2,15 @@ package student_player;
 
 import pentago_twist.PentagoMove;
 
+import java.io.*;
 import java.util.ArrayList;
 
 /**
  * A node used for MCTS
  */
-public class MCTSNode implements Comparable<MCTSNode> {
+public class MCTSNode implements Comparable<MCTSNode>, Serializable {
     LowMemoryBoardState state;
-    PentagoMove move;
+    transient PentagoMove move;
     ArrayList<MCTSNode> children;
     MCTSNode parent;
     int visits;
@@ -56,5 +57,39 @@ public class MCTSNode implements Comparable<MCTSNode> {
     @Override
     public int compareTo(MCTSNode node) {
         return Double.compare(uctVal(), node.uctVal());
+    }
+
+    /*
+    private int playerId;
+    private int xMove;
+    private int yMove;
+    private int aSwap;
+    private int bSwap;
+     */
+
+    @Serial
+    private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException {
+        System.out.println("RAN");
+        aInputStream.defaultReadObject();
+        if (parent != null) {
+            int id = aInputStream.readInt();
+            int x = aInputStream.readInt();
+            int y = aInputStream.readInt();
+            int a = aInputStream.readInt();
+            int b = aInputStream.readInt();
+            this.move = new PentagoMove(x, y, a, b, id);
+        }
+    }
+
+    @Serial
+    private void writeObject(ObjectOutputStream aOutputStream) throws IOException {
+        aOutputStream.defaultWriteObject();
+        if (move != null) {
+            aOutputStream.writeInt(move.getPlayerID());
+            aOutputStream.writeInt(move.getMoveCoord().getX());
+            aOutputStream.writeInt(move.getMoveCoord().getY());
+            aOutputStream.writeInt(move.getASwap());
+            aOutputStream.writeInt(move.getBSwap());
+        }
     }
 }

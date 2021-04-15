@@ -19,7 +19,7 @@ public class MonteCarloUCT {
 
     //variables storing the tree stemming from an empty board
     private static final LowMemoryBoardState INIT_STATE = new LowMemoryBoardState();
-    private static final MCTSNode INIT_ROOT = new MCTSNode();
+    protected static final MCTSNode INIT_ROOT = new MCTSNode();
     private static final Map<LowMemoryBoardState, MCTSNode> INIT_CHILDREN = new HashMap<>();
     static {
         // when the class initializes, we use an instance of MonteCarloUCT to
@@ -36,7 +36,7 @@ public class MonteCarloUCT {
     private final Map<LowMemoryBoardState, MCTSNode> descendantLookup;
     private long timeLimit;
     private SimulationStrategy simulationStrategy;
-    private MCTSNode root;
+    protected MCTSNode root;
 
     /**
      * Creates an instance of MonteCarloUCT
